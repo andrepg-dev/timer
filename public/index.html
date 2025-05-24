@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuenta Regresiva Hopta</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0D1117;
+      --card: #161B22;
+      --text-main: #C9D1D9;
+      --accent: #58A6FF;
+      --label-bg: #21262D;
+      --danger: #F85149;
+
+      --day-bg: #F2F2F2; /* Fondo claro actualizado */
+      --day-card: #FFFFFF;
+      --day-text-main: #1A1A1A;
+      --day-accent: #007BFF;
+      --day-label-bg: #E5E5E5;
+      --day-danger: #D32F2F;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.day-mode {
+      background: var(--day-bg);
+      color: var(--day-text-main);
+    }
+
+    body.day-mode .box {
+      background: var(--day-card);
+    }
+
+    body.day-mode .label {
+      background: var(--day-label-bg);
+    }
+
+    body.day-mode .value {
+      color: var(--day-accent);
+    }
+
+    body:not(.day-mode) #dias,
+    body:not(.day-mode) #segundos {
+      color: #fff;
+    }
+
+    body.day-mode #dias,
+    body.day-mode #segundos {
+      color: #000;
+    }
+
+    body.day-mode #quote {
+      background: rgba(0, 123, 255, 0.1);
+      border-left-color: var(--day-accent);
+    }
+
+    body.day-mode #sleep-screen {
+      color: var(--day-danger);
+    }
+
+    body.day-mode #sleep-time {
+      color: var(--day-text-main);
+    }
+
+    #countdown-screen, #sleep-screen, #github-stats-screen {
+      display: none;
+      width: 100%;
+      max-width: 600px;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    #today-date {
+      font-size: 2.5rem;
+      margin-top: .5rem;
+      font-weight: 700;
+    }
+
+    #countdown-container {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin: 1rem 0;
+    }
+
+    .box {
+      background: var(--card);
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+      min-width: 90px;
+      width: 170px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    #countdown-container .box:nth-child(1) { animation-delay: .1s; }
+    #countdown-container .box:nth-child(2) { animation-delay: .2s; }
+    #countdown-container .box:nth-child(3) { animation-delay: .3s; }
+    #countdown-container .box:nth-child(4) { animation-delay: .4s; }
+
+    .value {
+      font-size: 6rem; /* Aumentado */
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .label {
+      background: var(--label-bg);
+      padding: 6px 0;
+      margin-top: 12px;
+      font-size: 1rem;
+      border-radius: 4px;
+    }
+
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    #quote {
+      margin: 32px auto 0;
+      padding: 1rem 1.25rem;
+      max-width: 600px;
+      text-align: center;
+      font-size: 1.25rem;
+      font-style: italic;
+      background: rgba(88, 166, 255, 0.15);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      line-height: 1.5;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      opacity: 0.98;
+    }
+
+    #sleep-screen {
+      color: var(--danger);
+    }
+
+    #sleep-screen span {
+      font-size: 2.5rem;
+      font-weight: 900;
+      text-shadow: 0 0 20px rgba(248,81,73,0.7);
+      animation: pulse 1s ease-in-out infinite, shake 0.8s ease-in-out infinite;
+      margin-bottom: 1rem;
+    }
+
+    #sleep-time {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    @keyframes pulse {
+      0%,100% { text-shadow: 0 0 20px rgba(248,81,73,0.7); }
+      50%     { text-shadow: 0 0 40px rgba(248,81,73,1); }
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-5px); }
+      75%     { transform: translateX(5px); }
+    }
+
+    #github-stats-screen {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      padding: 0;
+      margin: 0;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    #github-date {
+      font-size: 1.2rem;
+      margin: 0.5rem;
+    }
+
+    #github-stats-screen img {
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="github-stats-screen">
+    <div id="github-date"></div>
+    <img id="github-streak-img" alt="GitHub Streak" />
+    <img id="github-last-commit-img" alt="GitHub Last Commit" style="width:auto;height:auto;max-width:90%;margin-top:-1rem;" />
+  </div>
+
+  <div id="countdown-screen">
+    <div id="countdown-container">
+      <div class="box"><div id="dias" class="value">00</div><div class="label">Días</div></div>
+      <div class="box"><div id="horas" class="value">00</div><div class="label">Horas</div></div>
+      <div class="box"><div id="minutos" class="value">00</div><div class="label">Minutos</div></div>
+      <div class="box"><div id="segundos" class="value">00</div><div class="label">Segundos</div></div>
+    </div>
+    <div id="today-date"></div>
+  </div>
+
+  <div id="sleep-screen">
+    <span>¡Ya es hora de dormir!</span>
+    <div id="sleep-time"></div>
+  </div>
+
+  <script>
+    const targetDate = new Date('2025-06-01T00:00:00');
+
+    function setTodayDate() {
+      const hoy = new Date();
+      const opts = { weekday:'long', month:'long', day:'numeric' };
+      let texto = hoy.toLocaleDateString('es-ES', opts);
+      texto = texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+      document.getElementById('today-date').innerText = `${texto}`;
+      document.getElementById('github-date').innerText = `${texto}`;
+    }
+
+    function updateGithubImages() {
+      const date = new Date().toISOString().split('T')[0];
+      document.getElementById('github-streak-img').src =
+        `https://github-readme-streak-stats.herokuapp.com?user=andrepg-dev&theme=radical&cache-bust=${date}`;
+      document.getElementById('github-last-commit-img').src =
+        `https://img.shields.io/github/last-commit/andrepg-dev/andrepg-dev?cache-bust=${date}`;
+    }
+
+    function applyThemeByTime() {
+      const now = new Date();
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      const isNight = hour < 6 || (hour === 17 && minute >= 50) || hour >= 18;
+      document.body.classList.toggle('day-mode', !isNight);
+    }
+
+    function updateUI() {
+      applyThemeByTime();
+
+      const now = new Date();
+      const hour = now.getHours();
+      const isBedtime = hour >= 22 || hour < 6;
+      const isGitHubTime = (hour >= 13 && hour < 15) || (hour >= 20 && hour < 22);
+
+      document.getElementById('countdown-screen').style.display = (!isBedtime && !isGitHubTime) ? 'flex' : 'none';
+      document.getElementById('sleep-screen').style.display = isBedtime ? 'flex' : 'none';
+      document.getElementById('github-stats-screen').style.display = isGitHubTime ? 'flex' : 'none';
+
+      if (isBedtime) {
+        const timeString = now.toLocaleTimeString('es-ES', {
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+          hour12: true
+        });
+        document.getElementById('sleep-time').innerText = timeString;
+      } else if (!isGitHubTime) {
+        const diff = targetDate - now;
+        if (diff <= 0) {
+          ['dias','horas','minutos','segundos'].forEach(id => {
+            document.getElementById(id).textContent = '00';
+          });
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        } else {
+          const totalSec = Math.floor(diff / 1000);
+          const dias = String(Math.floor(totalSec / 86400)).padStart(2, '0');
+          const horas = String(Math.floor((totalSec % 86400) / 3600)).padStart(2, '0');
+          const minutos = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+          const segundos = String(totalSec % 60).padStart(2, '0');
+          document.getElementById('dias').textContent = dias;
+          document.getElementById('horas').textContent = horas;
+          document.getElementById('minutos').textContent = minutos;
+          document.getElementById('segundos').textContent = segundos;
+        }
+      }
+
+      if (isGitHubTime) {
+        updateGithubImages();
+      }
+    }
+
+    setTodayDate();
+    setInterval(setTodayDate, 1000 * 60 * 60 * 12);
+    updateUI();
+    setInterval(updateUI, 1000);
+  </script>
+</body>
+</html>
