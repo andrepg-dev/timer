@@ -1,312 +1,836 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cuenta Regresiva Hopta</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>TIME REMAINING - PRÓXIMO MES</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            /* Sistema de diseño refinado */
+            --timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 0.3s var(--timing-function);
+            --transition-slow: 0.6s var(--timing-function);
+            
+            /* Colores día */
+            --bg: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --surface: #fafafa;
+            --separator: #e5e5e5;
+            
+            /* Colores noche */
+            --night-bg: #000000;
+            --night-text-primary: #ffffff;
+            --night-text-secondary: #999999;
+            --night-surface: #0a0a0a;
+            --night-separator: #1a1a1a;
+            
+            /* Colores para recordatorios */
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --danger: #ef4444;
+        }
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+        html { 
+            overflow: hidden;
+        }
 
-  <style>
-    :root {
-      --bg: #0D1117;
-      --card: #161B22;
-      --text-main: #C9D1D9;
-      --accent: #58A6FF;
-      --label-bg: #21262D;
-      --danger: #F85149;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-      --day-bg: #F2F2F2; /* Fondo claro actualizado */
-      --day-card: #FFFFFF;
-      --day-text-main: #1A1A1A;
-      --day-accent: #007BFF;
-      --day-label-bg: #E5E5E5;
-      --day-danger: #D32F2F;
-    }
+        html {
+            font-size: 16px;
+            overflow-x: hidden;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--transition-base), color var(--transition-base);
+            position: relative;
+            overflow: hidden;
+        }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background: var(--bg);
-      color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      overflow: hidden;
-      transition: background 0.3s, color 0.3s;
-    }
+        /* Modo noche ultra refinado */
+        body.night-mode {
+            background: var(--night-bg);
+            color: var(--night-text-primary);
+        }
 
-    body.day-mode {
-      background: var(--day-bg);
-      color: var(--day-text-main);
-    }
+        body.night-mode .time-value {
+            color: var(--night-text-primary);
+        }
 
-    body.day-mode .box {
-      background: var(--day-card);
-    }
+        body.night-mode .time-label {
+            color: var(--night-text-secondary);
+            background: var(--night-surface);
+            border-color: var(--night-separator);
+        }
 
-    body.day-mode .label {
-      background: var(--day-label-bg);
-    }
+        body.night-mode .separator {
+            color: var(--night-text-secondary);
+            opacity: 0.5;
+        }
 
-    body.day-mode .value {
-      color: var(--day-accent);
-    }
+        body.night-mode .date-info {
+            color: var(--night-text-secondary);
+        }
 
-    body:not(.day-mode) #dias,
-    body:not(.day-mode) #segundos {
-      color: #fff;
-    }
+        /* Contenedores principales */
+        #countdown-screen,
+        #sleep-screen,
+        #github-stats-screen,
+        #meditation-screen,
+        #early-sleep-screen,
+        #reading-screen {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 3rem;
+            padding: 2rem;
+            position: relative;
+        }
 
-    body.day-mode #dias,
-    body.day-mode #segundos {
-      color: #000;
-    }
+        /* Contenedor del contador */
+        .countdown-wrapper {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-    body.day-mode #quote {
-      background: rgba(0, 123, 255, 0.1);
-      border-left-color: var(--day-accent);
-    }
+        .countdown-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 4rem;
+            flex-wrap: nowrap;
+        }
 
-    body.day-mode #sleep-screen {
-      color: var(--day-danger);
-    }
+        /* Cajas de tiempo */
+        .time-unit-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            opacity: 0;
+            animation: fadeInScale 0.8s var(--timing-function) forwards;
+        }
 
-    body.day-mode #sleep-time {
-      color: var(--day-text-main);
-    }
+        .time-unit-wrapper:nth-child(1) { animation-delay: 0.1s; }
+        .time-unit-wrapper:nth-child(3) { animation-delay: 0.2s; }
+        .time-unit-wrapper:nth-child(5) { animation-delay: 0.3s; }
+        .time-unit-wrapper:nth-child(7) { animation-delay: 0.4s; }
 
-    #countdown-screen, #sleep-screen, #github-stats-screen {
-      display: none;
-      width: 100%;
-      max-width: 600px;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 1rem;
-    }
+        .time-value {
+            font-size: clamp(3rem, 12vw, 10rem);
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-primary);
+            transition: transform var(--transition-base);
+            cursor: default;
+            user-select: none;
+        }
 
-    #today-date {
-      font-size: 2.5rem;
-      margin-top: .5rem;
-      font-weight: 700;
-    }
+        .time-value:hover {
+            transform: scale(1.05);
+        }
 
-    #countdown-container {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      margin: 1rem 0;
-    }
+        .time-label {
+            font-size: clamp(0.75rem, 1.5vw, 1rem);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            background: var(--surface);
+            padding: 0.75rem 2rem;
+            border-radius: 100px;
+            border: 1px solid var(--separator);
+            transition: all var(--transition-base);
+        }
 
-    .box {
-      background: var(--card);
-      padding: 18px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.25);
-      min-width: 90px;
-      width: 170px;
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeInUp 0.6s ease forwards;
-    }
+        /* Separadores */
+        .separator {
+            font-size: clamp(2rem, 8vw, 6rem);
+            font-weight: 900;
+            color: var(--text-primary);
+            opacity: 0.2;
+            animation: pulse 2s ease-in-out infinite;
+            user-select: none;
+        }
 
-    #countdown-container .box:nth-child(1) { animation-delay: .1s; }
-    #countdown-container .box:nth-child(2) { animation-delay: .2s; }
-    #countdown-container .box:nth-child(3) { animation-delay: .3s; }
-    #countdown-container .box:nth-child(4) { animation-delay: .4s; }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.4; }
+        }
 
-    .value {
-      font-size: 6rem; /* Aumentado */
-      font-weight: 900;
-      color: var(--accent);
-    }
+        /* Información de fecha */
+        .date-info {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            opacity: 0;
+            animation: fadeIn 1s var(--timing-function) 0.6s forwards;
+        }
 
-    .label {
-      background: var(--label-bg);
-      padding: 6px 0;
-      margin-top: 12px;
-      font-size: 1rem;
-      border-radius: 4px;
-    }
+        .date-info .time-display {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
 
-    @keyframes fadeInUp {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
+        /* Información del mes */
+        .month-info {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            font-weight: 600;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeIn 1s var(--timing-function) 0.3s forwards;
+        }
 
-    #quote {
-      margin: 32px auto 0;
-      padding: 1rem 1.25rem;
-      max-width: 600px;
-      text-align: center;
-      font-size: 1.25rem;
-      font-style: italic;
-      background: rgba(88, 166, 255, 0.15);
-      border-left: 4px solid var(--accent);
-      border-radius: 8px;
-      line-height: 1.5;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      opacity: 0.98;
-    }
+        /* Pantalla de dormir */
+        #sleep-screen {
+            background: var(--night-bg);
+            color: var(--danger);
+        }
 
-    #sleep-screen {
-      color: var(--danger);
-    }
+        .sleep-message {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 2rem;
+            animation: glow 2s ease-in-out infinite;
+            text-align: center;
+        }
 
-    #sleep-screen span {
-      font-size: 2.5rem;
-      font-weight: 900;
-      text-shadow: 0 0 20px rgba(248,81,73,0.7);
-      animation: pulse 1s ease-in-out infinite, shake 0.8s ease-in-out infinite;
-      margin-bottom: 1rem;
-    }
+        @keyframes glow {
+            0%, 100% {
+                text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+                transform: scale(1);
+            }
+            50% {
+                text-shadow: 0 0 40px rgba(239, 68, 68, 0.8);
+                transform: scale(1.02);
+            }
+        }
 
-    #sleep-time {
-      font-size: 2rem;
-      font-weight: 600;
-      color: var(--text-main);
-    }
+        .sleep-time {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 700;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 1.5rem 3rem;
+            border-radius: 100px;
+            border: 2px solid rgba(239, 68, 68, 0.3);
+        }
 
-    @keyframes pulse {
-      0%,100% { text-shadow: 0 0 20px rgba(248,81,73,0.7); }
-      50%     { text-shadow: 0 0 40px rgba(248,81,73,1); }
-    }
+        /* Pantallas de recordatorios */
+        .reminder-screen {
+            text-align: center;
+        }
 
-    @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      25%     { transform: translateX(-5px); }
-      75%     { transform: translateX(5px); }
-    }
+        .reminder-icon {
+            font-size: clamp(4rem, 8vw, 8rem);
+            margin-bottom: 2rem;
+            display: block;
+        }
 
-    #github-stats-screen {
-      display: none;
-      width: 100vw;
-      height: 100vh;
-      padding: 0;
-      margin: 0;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
+        .reminder-title {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
 
-    #github-date {
-      font-size: 1.2rem;
-      margin: 0.5rem;
-    }
+        .reminder-subtitle {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            font-weight: 600;
+            opacity: 0.8;
+            margin-bottom: 2rem;
+        }
 
-    #github-stats-screen img {
-      width: 100vw;
-      height: 100vh;
-      object-fit: contain;
-    }
-  </style>
+        .reminder-time {
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            font-weight: 700;
+            padding: 1rem 2rem;
+            border-radius: 100px;
+            border: 2px solid currentColor;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Colores específicos para cada recordatorio */
+        #meditation-screen {
+            color: var(--success);
+        }
+
+        #meditation-screen .reminder-icon {
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        #early-sleep-screen {
+            color: var(--warning);
+        }
+
+        #early-sleep-screen .reminder-icon {
+            animation: pulse-warning 2s ease-in-out infinite;
+        }
+
+        #reading-screen {
+            color: var(--info);
+        }
+
+        #reading-screen .reminder-icon {
+            animation: float 2s ease-in-out infinite;
+        }
+
+        /* GitHub Stats */
+        #github-stats-screen {
+            background: var(--bg);
+            padding: 2rem;
+        }
+
+        .github-date {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            font-weight: 600;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeIn 0.8s var(--timing-function) forwards;
+        }
+
+        .github-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 1rem 0;
+            opacity: 0;
+            animation: fadeInScale 0.8s var(--timing-function) 0.3s forwards;
+        }
+
+        /* Animaciones */
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        @keyframes pulse-warning {
+            0%, 100% { 
+                text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+                transform: scale(1);
+            }
+            50% { 
+                text-shadow: 0 0 40px rgba(245, 158, 11, 0.8);
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Responsive perfeccionado */
+        @media (max-width: 1024px) {
+            .countdown-container { gap: 1.5rem; }
+            .time-value { font-size: clamp(2.5rem, 10vw, 7rem); }
+        }
+
+        @media (max-width: 768px) {
+            .countdown-container { gap: 1rem; }
+            .separator { font-size: clamp(1.5rem, 6vw, 4rem); }
+            .time-label {
+                padding: 0.5rem 1.5rem;
+                font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 1rem; }
+            .countdown-container { gap: 0.5rem; }
+            .time-unit-wrapper { gap: 1rem; }
+            .time-value { font-size: clamp(2rem, 8vw, 4rem); }
+            .separator { font-size: clamp(1.2rem, 4vw, 2rem); }
+            .time-label {
+                padding: 0.4rem 1rem;
+                font-size: 0.65rem;
+                letter-spacing: 0.05em;
+            }
+            .date-info { margin-bottom: 2rem; }
+        }
+
+        /* Optimizaciones de rendimiento */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Mejoras de accesibilidad */
+        :focus-visible {
+            outline: 2px solid var(--text-primary);
+            outline-offset: 4px;
+        }
+
+        /* Efecto de carga suave */
+        @keyframes pageLoad {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        body {
+            animation: pageLoad 0.6s ease-out;
+        }
+
+        /* Micro-interacciones */
+        .time-value {
+            position: relative;
+            display: inline-block;
+        }
+
+        .time-value::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: currentColor;
+            transform: scaleX(0);
+            transition: transform var(--transition-base);
+            border-radius: 2px;
+        }
+
+        .time-value:hover::after {
+            transform: scaleX(1);
+        }
+
+        /* Sombras sutiles en modo noche */
+        body.night-mode .time-value {
+            text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+        }
+
+        body.night-mode .time-label {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Mejora visual para pantallas de alta densidad */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .time-label { border-width: 0.5px; }
+        }
+    </style>
 </head>
 <body>
-
-  <div id="github-stats-screen">
-    <div id="github-date"></div>
-    <img id="github-streak-img" alt="GitHub Streak" />
-    <img id="github-last-commit-img" alt="GitHub Last Commit" style="width:auto;height:auto;max-width:90%;margin-top:-1rem;" />
-  </div>
-
-  <div id="countdown-screen">
-    <div id="countdown-container">
-      <div class="box"><div id="dias" class="value">00</div><div class="label">Días</div></div>
-      <div class="box"><div id="horas" class="value">00</div><div class="label">Horas</div></div>
-      <div class="box"><div id="minutos" class="value">00</div><div class="label">Minutos</div></div>
-      <div class="box"><div id="segundos" class="value">00</div><div class="label">Segundos</div></div>
+    <!-- Pantalla de GitHub Stats -->
+    <div id="github-stats-screen">
+        <div class="github-date" id="github-date"></div>
+        <img id="github-streak-img" class="github-image" alt="GitHub Streak Stats" loading="lazy" />
+        <img id="github-last-commit-img" alt="Last Commit" loading="lazy" />
     </div>
-    <div id="today-date"></div>
-  </div>
 
-  <div id="sleep-screen">
-    <span>¡Ya es hora de dormir!</span>
-    <div id="sleep-time"></div>
-  </div>
+    <!-- Pantalla principal del contador -->
+    <div id="countdown-screen">
+        <div class="countdown-wrapper">
+            <div class="month-info" id="month-info"></div>
+            <div class="countdown-container">
+                <div class="time-unit-wrapper">
+                    <div id="dias" class="time-value">00</div>
+                    <div class="time-label">Días</div>
+                </div>
+                <div class="separator">:</div>
+                <div class="time-unit-wrapper">
+                    <div id="horas" class="time-value">00</div>
+                    <div class="time-label">Horas</div>
+                </div>
+                <div class="separator">:</div>
+                <div class="time-unit-wrapper">
+                    <div id="minutos" class="time-value">00</div>
+                    <div class="time-label">Minutos</div>
+                </div>
+                <div class="separator">:</div>
+                <div class="time-unit-wrapper">
+                    <div id="segundos" class="time-value">00</div>
+                    <div class="time-label">Segundos</div>
+                </div>
+            </div>
+            <div class="date-info" id="today-date"></div>
+        </div>
+    </div>
 
-  <script>
-    const targetDate = new Date('2025-06-01T00:00:00');
+    <!-- Pantalla de dormir -->
+    <div id="sleep-screen">
+        <div class="sleep-message">¡Ya es hora de dormir!</div>
+        <div class="sleep-time" id="sleep-time"></div>
+    </div>
 
-    function setTodayDate() {
-      const hoy = new Date();
-      const opts = { weekday:'long', month:'long', day:'numeric' };
-      let texto = hoy.toLocaleDateString('es-ES', opts);
-      texto = texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
-      document.getElementById('today-date').innerText = `${texto}`;
-      document.getElementById('github-date').innerText = `${texto}`;
-    }
+    <!-- Pantalla de meditación -->
+    <div id="meditation-screen" class="reminder-screen">
+        <div class="reminder-icon">🧘‍♂️</div>
+        <div class="reminder-title">Momento de Meditar</div>
+        <div class="reminder-subtitle">Tómate 15 minutos para ti</div>
+        <div class="reminder-time" id="meditation-time"></div>
+    </div>
 
-    function updateGithubImages() {
-      const date = new Date().toISOString().split('T')[0];
-      document.getElementById('github-streak-img').src =
-        `https://github-readme-streak-stats.herokuapp.com?user=andrepg-dev&theme=radical&cache-bust=${date}`;
-      document.getElementById('github-last-commit-img').src =
-        `https://img.shields.io/github/last-commit/andrepg-dev/andrepg-dev?cache-bust=${date}`;
-    }
+    <!-- Pantalla de dormir temprano -->
+    <div id="early-sleep-screen" class="reminder-screen">
+        <div class="reminder-icon">⚠️</div>
+        <div class="reminder-title">¡Hora de Dormir Temprano!</div>
+        <div class="reminder-subtitle">Mañana debes ir a la universidad y levantarte a las 6</div>
+        <div class="reminder-time" id="early-sleep-time"></div>
+    </div>
 
-    function applyThemeByTime() {
-      const now = new Date();
-      const hour = now.getHours();
-      const minute = now.getMinutes();
-      const isNight = hour < 6 || (hour === 17 && minute >= 50) || hour >= 18;
-      document.body.classList.toggle('day-mode', !isNight);
-    }
+    <!-- Pantalla de lectura -->
+    <div id="reading-screen" class="reminder-screen">
+        <div class="reminder-icon">📚</div>
+        <div class="reminder-title">Tiempo de Lectura</div>
+        <div class="reminder-subtitle">30 minutos para leer un buen libro</div>
+        <div class="reminder-time" id="reading-time"></div>
+    </div>
 
-    function updateUI() {
-      applyThemeByTime();
+    <script>
+        // Configuración optimizada
+        const CONFIG = {
+            timezone: 'America/Tegucigalpa',
+            locale: 'es-HN',
+            updateInterval: 1000,
+            githubUser: 'andrepg-dev',
+            bedtimeStart: { hour: 2, minute: 0 }, // 2:00 AM
+            bedtimeEnd: { hour: 6, minute: 0 },   // 6:00 AM
+            githubHours: [[13, 15], [20, 22]],
+            nightModeStart: 18,
+            nightModeEnd: 6
+        };
 
-      const now = new Date();
-      const hour = now.getHours();
-      const isBedtime = hour >= 22 || hour < 6;
-      const isGitHubTime = (hour >= 13 && hour < 15) || (hour >= 20 && hour < 22);
+        // Cache de elementos DOM
+        const elements = {};
 
-      document.getElementById('countdown-screen').style.display = (!isBedtime && !isGitHubTime) ? 'flex' : 'none';
-      document.getElementById('sleep-screen').style.display = isBedtime ? 'flex' : 'none';
-      document.getElementById('github-stats-screen').style.display = isGitHubTime ? 'flex' : 'none';
-
-      if (isBedtime) {
-        const timeString = now.toLocaleTimeString('es-ES', {
-          hour: 'numeric',
-          minute: 'numeric',
-          second: 'numeric',
-          hour12: true
-        });
-        document.getElementById('sleep-time').innerText = timeString;
-      } else if (!isGitHubTime) {
-        const diff = targetDate - now;
-        if (diff <= 0) {
-          ['dias','horas','minutos','segundos'].forEach(id => {
-            document.getElementById(id).textContent = '00';
-          });
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        } else {
-          const totalSec = Math.floor(diff / 1000);
-          const dias = String(Math.floor(totalSec / 86400)).padStart(2, '0');
-          const horas = String(Math.floor((totalSec % 86400) / 3600)).padStart(2, '0');
-          const minutos = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
-          const segundos = String(totalSec % 60).padStart(2, '0');
-          document.getElementById('dias').textContent = dias;
-          document.getElementById('horas').textContent = horas;
-          document.getElementById('minutos').textContent = minutos;
-          document.getElementById('segundos').textContent = segundos;
+        // Inicializar elementos después de que el DOM esté listo
+        function initElements() {
+            elements.dias = document.getElementById('dias');
+            elements.horas = document.getElementById('horas');
+            elements.minutos = document.getElementById('minutos');
+            elements.segundos = document.getElementById('segundos');
+            elements.todayDate = document.getElementById('today-date');
+            elements.monthInfo = document.getElementById('month-info');
+            elements.countdownScreen = document.getElementById('countdown-screen');
+            elements.sleepScreen = document.getElementById('sleep-screen');
+            elements.githubScreen = document.getElementById('github-stats-screen');
+            elements.meditationScreen = document.getElementById('meditation-screen');
+            elements.earlySleepScreen = document.getElementById('early-sleep-screen');
+            elements.readingScreen = document.getElementById('reading-screen');
+            elements.sleepTime = document.getElementById('sleep-time');
+            elements.meditationTime = document.getElementById('meditation-time');
+            elements.earlySleepTime = document.getElementById('early-sleep-time');
+            elements.readingTime = document.getElementById('reading-time');
+            elements.githubDate = document.getElementById('github-date');
+            elements.githubStreak = document.getElementById('github-streak-img');
+            elements.githubCommit = document.getElementById('github-last-commit-img');
         }
-      }
 
-      if (isGitHubTime) {
-        updateGithubImages();
-      }
-    }
+        // Obtener hora de Honduras optimizada
+        function getHondurasTime() {
+            const now = new Date();
+            const formatter = new Intl.DateTimeFormat(CONFIG.locale, {
+                timeZone: CONFIG.timezone,
+                hour12: false,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const parts = formatter.formatToParts(now);
+            const dateMap = {};
+            parts.forEach(part => {
+                if (part.type !== 'literal') {
+                    dateMap[part.type] = part.value;
+                }
+            });
+            return new Date(`${dateMap.year}-${dateMap.month}-${dateMap.day}T${dateMap.hour}:${dateMap.minute}:${dateMap.second}-06:00`);
+        }
 
-    setTodayDate();
-    setInterval(setTodayDate, 1000 * 60 * 60 * 12);
-    updateUI();
-    setInterval(updateUI, 1000);
-  </script>
+        // Función para obtener el primer día del próximo mes
+        function getNextMonthFirstDay() {
+            const now = getHondurasTime();
+            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            return nextMonth;
+        }
+
+        // Función para obtener el nombre del próximo mes
+        function getNextMonthName() {
+            const now = getHondurasTime();
+            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const monthNames = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            return monthNames[nextMonth.getMonth()];
+        }
+
+        // Función para verificar si es hora de dormir
+        function isBedtime(currentTime) {
+            const hour = currentTime.getHours();
+            const minute = currentTime.getMinutes();
+            const currentMinutes = hour * 60 + minute;
+            const bedtimeStartMinutes = CONFIG.bedtimeStart.hour * 60 + CONFIG.bedtimeStart.minute;
+            const bedtimeEndMinutes = CONFIG.bedtimeEnd.hour * 60 + CONFIG.bedtimeEnd.minute;
+
+            if (bedtimeStartMinutes > bedtimeEndMinutes) {
+                return currentMinutes >= bedtimeStartMinutes || currentMinutes < bedtimeEndMinutes;
+            } else {
+                return currentMinutes >= bedtimeStartMinutes && currentMinutes < bedtimeEndMinutes;
+            }
+        }
+
+        // Actualizar fecha con formato mejorado
+        function updateDateDisplay() {
+            const now = getHondurasTime();
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            const dateStr = now.toLocaleDateString('es-ES', options);
+            const timeStr = now.toLocaleTimeString('es-ES', {
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            const day = now.getDate();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+            if (elements.todayDate) {
+                elements.todayDate.innerHTML = `${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}
+                    <span style="opacity: 0.6">(${day}/${daysInMonth})</span>
+                    <span class="time-display">${timeStr}</span>
+                `;
+            }
+
+            if (elements.githubDate) {
+                elements.githubDate.textContent = `${dateStr} - ${day}/${daysInMonth}`;
+            }
+
+            // Actualizar información del próximo mes
+            if (elements.monthInfo) {
+                const nextMonthName = getNextMonthName();
+                const nextMonthYear = getNextMonthFirstDay().getFullYear();
+                elements.monthInfo.textContent = `Faltan para ${nextMonthName} ${nextMonthYear}`;
+            }
+        }
+
+        // Aplicar tema según hora
+        function applyTheme() {
+            const hour = getHondurasTime().getHours();
+            const isNight = hour >= CONFIG.nightModeStart || hour < CONFIG.nightModeEnd;
+            document.body.classList.toggle('night-mode', isNight);
+
+            // Actualizar meta theme-color
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) {
+                metaTheme.content = isNight ? '#000000' : '#ffffff';
+            }
+        }
+
+        // Actualizar imágenes de GitHub con cache busting
+        function updateGithubImages() {
+            const timestamp = Date.now();
+            const theme = document.body.classList.contains('night-mode') ? 'dark' : 'default';
+            
+            if (elements.githubStreak) {
+                elements.githubStreak.src = `https://github-readme-streak-stats.herokuapp.com?user=${CONFIG.githubUser}&theme=${theme}&cache=${timestamp}`;
+            }
+            
+            if (elements.githubCommit) {
+                elements.githubCommit.src = `https://img.shields.io/github/last-commit/${CONFIG.githubUser}/${CONFIG.githubUser}?cache=${timestamp}`;
+            }
+        }
+
+        // Función principal de actualización optimizada
+        function updateUI() {
+            const now = getHondurasTime();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const dayOfWeek = now.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+
+            // Condiciones de tiempo
+            const isBedtimeNow = isBedtime(now);
+            const isGithubTime = CONFIG.githubHours.some(([start, end]) => hour >= start && hour < end);
+            const isMeditationTime = hour === 6 && minute < 15; // 6:00 - 6:15 AM
+            const isEarlySleepTime = (dayOfWeek === 0 || dayOfWeek === 2) && hour === 21; // Domingo o Martes 9-10 PM
+            const isReadingTime = hour === 6 && minute >= 30 && minute < 60 && 
+                                  (dayOfWeek === 2 || dayOfWeek === 4 || dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0); // Mar, Jue, Vie, Sab, Dom 6:30-7:00 AM
+
+            // Ocultar todas las pantallas primero
+            const screens = [
+                elements.countdownScreen, elements.sleepScreen, elements.githubScreen,
+                elements.meditationScreen, elements.earlySleepScreen, elements.readingScreen
+            ];
+            screens.forEach(screen => {
+                if (screen) screen.style.display = 'none';
+            });
+
+            const timeString = now.toLocaleTimeString('es-ES', {
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                hour12: true
+            });
+
+            // Mostrar la pantalla apropiada según prioridad
+            if (isBedtimeNow) {
+                if (elements.sleepScreen) elements.sleepScreen.style.display = 'flex';
+                if (elements.sleepTime) elements.sleepTime.textContent = timeString;
+            } else if (isMeditationTime) {
+                if (elements.meditationScreen) elements.meditationScreen.style.display = 'flex';
+                if (elements.meditationTime) elements.meditationTime.textContent = timeString;
+            } else if (isReadingTime) {
+                if (elements.readingScreen) elements.readingScreen.style.display = 'flex';
+                if (elements.readingTime) elements.readingTime.textContent = timeString;
+            } else if (isEarlySleepTime) {
+                if (elements.earlySleepScreen) elements.earlySleepScreen.style.display = 'flex';
+                if (elements.earlySleepTime) elements.earlySleepTime.textContent = timeString;
+            } else if (isGithubTime) {
+                if (elements.githubScreen) elements.githubScreen.style.display = 'flex';
+                if (!window.githubImagesLoaded) {
+                    updateGithubImages();
+                    window.githubImagesLoaded = true;
+                    setTimeout(() => {
+                        window.githubImagesLoaded = false;
+                    }, 3600000);
+                }
+            } else {
+                // Mostrar contador normal
+                if (elements.countdownScreen) elements.countdownScreen.style.display = 'flex';
+                
+                // Calcular la fecha objetivo dinámicamente
+                const targetDate = getNextMonthFirstDay();
+                const timeDiff = targetDate.getTime() - now.getTime();
+
+                if (timeDiff <= 0) {
+                    updateCounterDisplay(0, 0, 0, 0);
+                    if (typeof confetti === 'function' && !window.confettiShown) {
+                        window.confettiShown = true;
+                        confetti({
+                            particleCount: 200,
+                            spread: 90,
+                            origin: { y: 0.6 },
+                            colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                        });
+                    }
+                } else {
+                    const days = Math.floor(timeDiff / 86400000);
+                    const hours = Math.floor((timeDiff % 86400000) / 3600000);
+                    const minutes = Math.floor((timeDiff % 3600000) / 60000);
+                    const seconds = Math.floor((timeDiff % 60000) / 1000);
+                    updateCounterDisplay(days, hours, minutes, seconds);
+                }
+            }
+        }
+
+        // Actualizar display del contador con animación suave
+        function updateCounterDisplay(days, hours, minutes, seconds) {
+            const updates = [
+                { el: elements.dias, val: days },
+                { el: elements.horas, val: hours },
+                { el: elements.minutos, val: minutes },
+                { el: elements.segundos, val: seconds }
+            ];
+
+            updates.forEach(({ el, val }) => {
+                if (el) {
+                    const newVal = String(val).padStart(2, '0');
+                    if (el.textContent !== newVal) {
+                        el.style.transform = 'scale(0.95)';
+                        el.textContent = newVal;
+                        setTimeout(() => {
+                            el.style.transform = 'scale(1)';
+                        }, 100);
+                    }
+                }
+            });
+        }
+
+        // Inicialización optimizada
+        function init() {
+            initElements();
+            applyTheme();
+            updateDateDisplay();
+            updateUI();
+
+            // Intervalos optimizados
+            setInterval(updateUI, CONFIG.updateInterval);
+            setInterval(updateDateDisplay, 1000);
+            setInterval(applyTheme, 60000); // Verificar tema cada minuto
+
+            // Event listeners para optimización
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    updateUI();
+                    updateDateDisplay();
+                }
+            });
+
+            // Manejar errores de imágenes
+            window.addEventListener('error', (e) => {
+                if (e.target.tagName === 'IMG') {
+                    console.warn('Error loading image:', e.target.src);
+                    e.target.style.display = 'none';
+                }
+            }, true);
+        }
+
+        // Iniciar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        // Service Worker para offline (opcional)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+    </script>
 </body>
 </html>
